@@ -2,11 +2,12 @@
 
 [services.library-books-api]
 type = "web"
+root = "src/LibraryBooks.Api"
 
 [services.library-books-api.build]
 runtime = { dotnet = "10" }
-install = "dotnet restore src/LibraryBooks.Api"
-command = "dotnet publish src/LibraryBooks.Api --configuration Release --no-restore --output out"
+install = "dotnet restore"
+command = "dotnet publish --configuration Release --no-restore --output out"
 
 [services.library-books-api.deploy]
 start = "dotnet out/LibraryBooks.Api.dll"
