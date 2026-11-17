@@ -167,20 +167,69 @@ public class BooksApiTests : IDisposable
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Theory]
-    [InlineData("", "Chinua Achebe", "9780385474542", 1958, "Title")]
-    [InlineData("Things Fall Apart", "   ", "9780385474542", 1958, "Author")]
-    [InlineData("Things Fall Apart", "Chinua Achebe", "12-34", 1958, "Isbn")]
-    [InlineData("Things Fall Apart", "Chinua Achebe", "9780385474542", 3000, "PublishedYear")]
-    public async Task Rejects_invalid_books_with_field_errors(string title, string author, string isbn, int year, string invalidField)
+    public static TheoryData<BookRequest, string> InvalidBooks()
     {
-        var request = new BookRequest { Title = title, Author = author, Isbn = isbn, PublishedYear = year };
+        var nextYear = DateTime.UtcNow.Year + 1;
+        return new()
+        {
+            { With(book => book.Title = ""), "Title" },
+            { With(book => book.Title = "   "), "Title" },
+            { With(book => book.Title = new string('a', 201)), "Title" },
+            { With(book => book.Author = "   "), "Author" },
+            { With(book => book.Isbn = "12-34"), "Isbn" },
+            { With(book => book.Isbn = "9780385474543"), "Isbn" },
+            { With(book => book.Isbn = "0306406153"), "Isbn" },
+            { With(book => book.PublishedYear = 1200), "PublishedYear" },
+            { With(book => book.PublishedYear = nextYear), "PublishedYear" },
+            { With(book => book.CopiesAvailable = -1), "CopiesAvailable" },
+        };
+    }
 
+    static BookRequest With(Action<BookRequest> change)
+    {
+        var request = NewBook();
+        change(request);
+        return request;
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidBooks))]
+    public async Task Rejects_invalid_books_with_field_errors(BookRequest request, string invalidField)
+    {
         var response = await client.PostAsJsonAsync("/books", request);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.True(problem.GetProperty("errors").TryGetProperty(invalidField, out _), problem.ToString());
+        Assert.Empty((await client.GetFromJsonAsync<List<Book>>("/books"))!);
+    }
+
+    [Fact]
+    public async Task Rejects_an_empty_payload_with_every_required_field()
+    {
+        var response = await client.PostAsync("/books", JsonContent.Create(new { }));
+        var errors = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("errors");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.All(new[] { "Title", "Author", "Isbn", "PublishedYear" }, field => Assert.True(errors.TryGetProperty(field, out _), field));
+    }
+
+    [Fact]
+    public async Task Rejects_an_invalid_update_without_changing_the_book()
+    {
+        var created = await Create(NewBook());
+
+        var response = await client.PutAsJsonAsync($"/books/{created.Id}", With(book => book.Title = ""));
+        var book = await client.GetFromJsonAsync<Book>($"/books/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("Things Fall Apart", book!.Title);
+    }
+
+    [Fact]
+    public async Task Accepts_an_isbn10_ending_in_x()
+    {
+        await Create(With(book => book.Isbn = "043942089X"));
     }
 
     [Fact]

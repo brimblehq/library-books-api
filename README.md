@@ -29,7 +29,7 @@ curl -X POST localhost:5000/books \
   -d '{"title":"Things Fall Apart","author":"Chinua Achebe","isbn":"9780385474542","publishedYear":1958,"copiesAvailable":3}'
 ```
 
-Invalid input returns `400` with field errors, and a duplicate ISBN returns `409`.
+Requests are validated with [FluentValidation](https://docs.fluentvalidation.net): title and author are required, the ISBN must be a valid ISBN-10 or ISBN-13 (checksum included), the published year can't be in the future, and copies can't be negative. Invalid input returns `400` with field errors, and a duplicate ISBN returns `409`.
 
 ## Test
 

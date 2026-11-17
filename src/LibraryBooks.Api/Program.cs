@@ -1,3 +1,4 @@
+using FluentValidation;
 using LibraryBooks.Api.Books;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +10,8 @@ if (!string.IsNullOrEmpty(port))
 
 builder.Services.AddDbContext<LibraryDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Library") ?? "Data Source=library.db"));
-builder.Services.AddValidation();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddValidatorsFromAssemblyContaining<BookRequestValidator>();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();

@@ -1,3 +1,4 @@
+using LibraryBooks.Api.Validation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,8 +12,8 @@ public static class BookEndpoints
 
         books.MapGet("/", ListBooks);
         books.MapGet("/{id:int}", GetBook);
-        books.MapPost("/", CreateBook);
-        books.MapPut("/{id:int}", UpdateBook);
+        books.MapPost("/", CreateBook).AddEndpointFilter<ValidationFilter<BookRequest>>();
+        books.MapPut("/{id:int}", UpdateBook).AddEndpointFilter<ValidationFilter<BookRequest>>();
         books.MapDelete("/{id:int}", DeleteBook);
     }
 
