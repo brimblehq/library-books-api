@@ -1,0 +1,26 @@
+#:schema https://brimble.io/schema/brimble.json
+
+[services.library-books-api]
+type = "web"
+
+[services.library-books-api.build]
+runtime = { dotnet = "10" }
+install = "dotnet restore src/LibraryBooks.Api"
+command = "dotnet publish src/LibraryBooks.Api --configuration Release --no-restore --output out"
+
+[services.library-books-api.deploy]
+start = "dotnet out/LibraryBooks.Api.dll"
+port = 8080
+health = "/health"
+
+[services.library-books-api.resources]
+cpu = 0.5
+memory = "512mb"
+
+[services.library-books-api.volume]
+path = "/data"
+size = "10gb"
+
+[services.library-books-api.env]
+ASPNETCORE_ENVIRONMENT = "Production"
+ConnectionStrings__Library = "Data Source=/data/library.db"
