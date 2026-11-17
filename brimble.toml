@@ -10,7 +10,7 @@ install = "dotnet restore"
 command = "dotnet publish --configuration Release --no-restore --output out"
 
 [services.library-books-api.deploy]
-start = "dotnet out/LibraryBooks.Api.dll"
+start = "./out/LibraryBooks.Api"
 port = 8080
 health = "/health"
 
